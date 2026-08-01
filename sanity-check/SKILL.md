@@ -92,4 +92,5 @@ Follow it with one line naming exactly what is left to do, or "Environment is re
 | Treating `NOT_ON_PATH` as a missing install | Fix the shell profile — reinstalling changes nothing |
 | Running installs without asking | Show the command, get a yes, then run it |
 | Claiming an install worked because the command exited 0 | Re-probe the binary and report its version |
+| Reading `brew install X` → "already installed and up-to-date" as a contradiction of a `MISSING` probe | Both are true: the formula was in the Cellar but unlinked, so the binary was genuinely unreachable. `brew install` silently re-links it. Re-probe — it will now pass. |
 | Trying to authenticate the Supabase MCP for the user | Hand off — the OAuth flow needs a human in a browser |
