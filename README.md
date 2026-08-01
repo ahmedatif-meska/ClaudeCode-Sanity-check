@@ -6,6 +6,8 @@ Checks **Homebrew** (macOS), **Node.js**, **GitHub CLI**, and the **Supabase MCP
 
 No dependencies on other skills or plugins — a `SKILL.md` and two probe scripts.
 
+**Free to use, no API keys.** Nothing here asks for a key, token, or paid account. Every tool it installs is free and open source, and the scripts read no credentials and set no environment variables. The one sign-in involved is the Supabase MCP connector, which uses a browser OAuth flow against your own Supabase account (free tier is fine) — you can skip that check entirely if you don't use Supabase.
+
 ## Install
 
 ```bash
@@ -77,3 +79,7 @@ Add a `probe` line to both scripts, then a row to the Quick Reference table in `
 The macOS probe is tested on macOS 14.5 (arm64), on both its passing and degraded-`PATH` paths. The Supabase check is verified against a live Claude Code session.
 
 **`check-windows.ps1` has not been executed on Windows.** It uses only standard cmdlets (`Get-Command`, `Get-CimInstance`), but treat it as unverified until it runs on a real Windows machine. Reports welcome.
+
+## License
+
+MIT © 2026 Ahmed Atef. See [LICENSE](LICENSE) — free to use, modify, and redistribute, including commercially.
