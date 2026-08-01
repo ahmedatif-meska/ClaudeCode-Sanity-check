@@ -1,6 +1,6 @@
 ---
 name: sanity-check
-description: Use when a user wants to verify their development environment is ready, set up a new machine, or asks whether they have the required tools — checks Homebrew, Node.js, GitHub CLI, and the Supabase MCP connector on macOS or Windows, and guides installation of whatever is missing.
+description: Use when a user wants to verify their development environment is ready, set up a new machine, or asks whether they have the required tools — checks Homebrew, Node.js, GitHub CLI, the Claude Code CLI, and the Supabase MCP connector on macOS or Windows, and guides installation of whatever is missing.
 ---
 
 # Environment Sanity Check
@@ -25,6 +25,7 @@ Verify a machine has the tools required to start work, and guide the user throug
 | Homebrew | `scripts/check-macos.sh` | `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"` | n/a — `winget` ships with Windows |
 | Node.js | both scripts | `brew install node` | `winget install --id OpenJS.NodeJS --source winget` |
 | GitHub CLI | both scripts | `brew install gh` | `winget install --id GitHub.cli --source winget` |
+| Claude Code CLI | both scripts | see below | see below |
 | Supabase MCP | `claude mcp list` | see below | see below |
 
 Run the probe with `bash scripts/check-macos.sh` or `pwsh -File scripts/check-windows.ps1`, resolving the path relative to this skill's directory.
@@ -45,6 +46,21 @@ echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile && eval "$(/opt/
 ```
 
 Use `/usr/local/bin/brew` instead if that is the path the probe reported.
+
+## Claude Code CLI
+
+The probe reports the version and how it was installed, e.g. `claude-code|OK|2.1.220 (Claude Code) (native)`.
+
+**A missing `claude` binary is not a contradiction.** You are running inside Claude Code, so it exists — but users on the IDE extension or desktop app often never put the CLI on their `PATH`. Report it as a real gap; `claude mcp list` and every other CLI step depends on it.
+
+| Situation | Fix |
+|---|---|
+| Present, want the latest | `claude update` — checks and installs in one step. Works for both install methods. |
+| Missing, macOS/Linux | `curl -fsSL https://claude.ai/install.sh \| bash` |
+| Missing, Windows | `irm https://claude.ai/install.ps1 \| iex` |
+| Missing, prefers npm | `npm install -g @anthropic-ai/claude-code` — requires the Node.js check above to pass first |
+
+Do not claim a version is outdated unless `claude update` says so. Determining the latest release needs a network call, and the probe deliberately makes none — it reports the installed version and nothing more.
 
 ## Supabase MCP Connector
 

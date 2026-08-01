@@ -25,3 +25,14 @@ $caption = (Get-CimInstance Win32_OperatingSystem).Caption
 Probe -Name 'winget'     -Command 'winget'
 Probe -Name 'node'       -Command 'node'
 Probe -Name 'github-cli' -Command 'gh'
+
+# Claude Code CLI. Remediation differs by install method - `claude update` for a
+# native install, npm for an npm one - so report which is in play.
+$claude = Get-Command claude -ErrorAction SilentlyContinue
+if ($claude) {
+    $version = (& claude --version 2>$null | Select-Object -First 1)
+    $method = if ($claude.Source -like '*node_modules*') { 'npm' } else { 'native' }
+    "claude-code|OK|$version ($method)"
+} else {
+    "claude-code|MISSING|"
+}

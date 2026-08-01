@@ -30,3 +30,16 @@ fi
 
 probe node node node --version
 probe github-cli gh gh --version
+
+# Claude Code CLI. Remediation differs by install method — `claude update` for a
+# native install, npm for an npm one — so report which is in play.
+if command -v claude >/dev/null 2>&1; then
+  resolved="$(readlink "$(command -v claude)" 2>/dev/null || command -v claude)"
+  case "$resolved" in
+    *node_modules*) method=npm ;;
+    *) method=native ;;
+  esac
+  printf 'claude-code|OK|%s (%s)\n' "$(claude --version 2>/dev/null | head -1)" "$method"
+else
+  printf 'claude-code|MISSING|\n'
+fi

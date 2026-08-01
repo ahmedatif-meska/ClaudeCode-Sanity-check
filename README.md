@@ -2,7 +2,7 @@
 
 A [Claude Code](https://claude.com/claude-code) skill that verifies a development environment is ready to work in, and walks you through installing whatever is missing.
 
-Checks **Homebrew** (macOS), **Node.js**, **GitHub CLI**, and the **Supabase MCP connector** on macOS and Windows.
+Checks **Homebrew** (macOS), **Node.js**, **GitHub CLI**, the **Claude Code CLI**, and the **Supabase MCP connector** on macOS and Windows.
 
 No dependencies on other skills or plugins — a `SKILL.md` and two probe scripts.
 
@@ -54,6 +54,7 @@ Or invoke it directly with `/sanity-check`.
 | Homebrew | official `install.sh` from Homebrew | n/a — `winget` ships with Windows |
 | Node.js | `brew install node` | `winget install --id OpenJS.NodeJS --source winget` |
 | GitHub CLI | `brew install gh` | `winget install --id GitHub.cli --source winget` |
+| Claude Code CLI | `claude update`, or `curl -fsSL https://claude.ai/install.sh \| bash` | `claude update`, or `irm https://claude.ai/install.ps1 \| iex` |
 | Supabase MCP | `claude mcp add --transport http supabase https://mcp.supabase.com/mcp` | same |
 
 ## Running the probes on their own
@@ -66,7 +67,10 @@ os|OK|macOS 14.5 (arm64)
 homebrew|OK|Homebrew 6.0.13
 node|OK|v24.18.0
 github-cli|MISSING|
+claude-code|OK|2.1.220 (Claude Code) (native)
 ```
+
+The Claude Code line reports the install method — `native` or `npm` — because the upgrade path differs between them.
 
 `NOT_ON_PATH` is a distinct status from `MISSING`: it means Homebrew is installed but your shell can't see it — common on Apple Silicon, where reinstalling won't help and a shell-profile fix will.
 
