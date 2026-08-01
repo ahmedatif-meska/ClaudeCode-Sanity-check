@@ -11,8 +11,8 @@ No dependencies on other skills or plugins — a `SKILL.md` and two probe script
 ## Install
 
 ```bash
-git clone https://github.com/<you>/sanity-check.git
-cd sanity-check
+git clone https://github.com/ahmedatif-meska/ClaudeCode-Sanity-check.git
+cd ClaudeCode-Sanity-check
 ./install.sh
 ```
 
