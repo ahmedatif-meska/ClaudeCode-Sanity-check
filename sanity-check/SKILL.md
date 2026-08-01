@@ -48,12 +48,17 @@ Use `/usr/local/bin/brew` instead if that is the path the probe reported.
 
 ## Supabase MCP Connector
 
-No shell probe can answer this. Check in this order:
+This is a session check, not a shell check. Run `claude mcp list` — it reports both registration and auth state per server, which is what you actually need:
 
-1. **Are Supabase MCP tools available in the current session?** Look for tools named `mcp__*supabase*`. If they are present, the connector is wired up — try one to confirm it is authenticated rather than assuming.
-2. **If no such tools exist,** run `claude mcp list` and look for a `supabase` entry.
-3. **If it is listed but failing or unauthenticated,** tell the user to run `/mcp`, select Supabase, and complete the auth flow. Authentication is interactive and browser-based — the user must do it, you cannot.
-4. **If it is not registered at all,** give them:
+```
+plugin:supabase:supabase: https://mcp.supabase.com/mcp (HTTP) - ! Needs authentication
+```
+
+Then act on the status:
+
+1. **`✔ Connected`** — done. Record it as passing.
+2. **`! Needs authentication` or a connection failure** — tell the user to run `/mcp`, select Supabase, and complete the auth flow. It is interactive and browser-based, so the user must do it; you cannot, and no tool call will do it for them.
+3. **No `supabase` entry at all** — give them:
 
    ```
    claude mcp add --transport http supabase https://mcp.supabase.com/mcp
@@ -81,6 +86,7 @@ Follow it with one line naming exactly what is left to do, or "Environment is re
 
 | Mistake | Do this instead |
 |---|---|
+| Concluding Supabase is ready because `mcp__*supabase*` tools exist | Those tools appear even when unauthenticated — an exposed `authenticate` tool is a sign it is *not* connected. Trust `claude mcp list`. |
 | Asking "Mac or Windows?" when the environment already says | Detect, state it, invite correction |
 | Reporting Node and `gh` as failures when Homebrew is missing on macOS | Fix Homebrew first; the rest are blocked, not broken |
 | Treating `NOT_ON_PATH` as a missing install | Fix the shell profile — reinstalling changes nothing |
