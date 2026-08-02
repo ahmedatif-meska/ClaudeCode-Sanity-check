@@ -13,15 +13,18 @@ Verify a machine has the tools required to start work, and guide the user throug
 
 1. **Determine the OS.** Read it from the environment, then state what you found and let the user correct it: "Detected macOS — is that right?" Do not silently assume.
 2. **Run the probe script** for that OS (see Quick Reference). It emits `name|status|detail` lines and installs nothing.
-3. **macOS only — Homebrew is a gate.** If Homebrew is `MISSING`, stop and fix it first. Every other macOS install command depends on it, so reporting the rest as "failed" is misleading.
-4. **Remediate each remaining failure** in order: Node.js, then GitHub CLI.
-5. **Check the Supabase MCP connector.** This is a Claude Code session check, not a shell check — see below.
-6. **Print the final report table.**
+3. **macOS only — Homebrew is a gate.** If Homebrew is `MISSING`, stop and fix it first. Every other macOS install command depends on it — including Python — so reporting the rest as "failed" is misleading. The probe *reports* Python first, but on macOS you still *fix* Homebrew first.
+4. **Remediate each remaining failure** in order: Python, pip, Node.js, then GitHub CLI.
+5. **Run the GitHub CLI live check** once `gh` is present — see below. Installed is not the same as working.
+6. **Check the Supabase MCP connector.** This is a Claude Code session check, not a shell check — see below.
+7. **Print the final report table.**
 
 ## Quick Reference
 
 | Check | Probe | macOS fix | Windows fix |
 |---|---|---|---|
+| Python | both scripts | `brew install python` | `winget install --id Python.Python.3.13 --source winget` |
+| pip | both scripts | ships with `brew install python` | ships with the winget package |
 | Homebrew | `scripts/check-macos.sh` | `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"` | n/a — `winget` ships with Windows |
 | Node.js | both scripts | `brew install node` | `winget install --id OpenJS.NodeJS --source winget` |
 | GitHub CLI | both scripts | `brew install gh` | `winget install --id GitHub.cli --source winget` |
@@ -46,6 +49,41 @@ echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile && eval "$(/opt/
 ```
 
 Use `/usr/local/bin/brew` instead if that is the path the probe reported.
+
+## Python and pip
+
+pip ships with every supported Python, so `python|OK` alongside `pip|MISSING` almost never means pip needs installing separately. It usually means one of:
+
+- **pip exists under a different name.** Try `python3 -m pip --version` before installing anything.
+- **A partial or system Python.** Repair with `python3 -m ensurepip --upgrade`.
+- **Windows App Execution Alias.** Windows stubs `python` to open the Microsoft Store. The probe already rejects that stub by requiring real version output, so it reports `MISSING` — correctly. Fix it in Settings → Apps → App execution aliases, or install Python properly with winget.
+
+**Do not run bare `pip install` to test it.** On Homebrew and most Linux Pythons the environment is externally managed (PEP 668) and the command fails by design, which looks like a broken pip when nothing is wrong. `pip --version` is the check; a venv is the fix for actually installing packages.
+
+Never suggest `sudo pip install`. It writes into a package-manager-owned tree and breaks the interpreter that other tools depend on.
+
+## GitHub CLI Live Check
+
+An installed `gh` proves nothing about whether it works. Once the presence check passes, run these — they are read-only and identical on macOS and Windows:
+
+```bash
+gh api user --jq .login                       # auth + network reach the API
+gh auth status                                # token scopes
+git ls-remote --heads "$(git remote get-url origin)"   # git transport + credentials
+```
+
+`git ls-remote` is the point of this check. It opens the same HTTPS connection, presents the same credentials through the same credential helper, and performs the same handshake a `git push` does — it just reads the ref list instead of uploading. If it succeeds, a push would reach the server.
+
+Skip the `ls-remote` line when there is no `origin` (`git remote get-url origin` exits non-zero outside a repo, or in one with no remote). That is not a failure — report the first two and say the transport check was skipped for lack of a remote.
+
+| Symptom | Meaning |
+|---|---|
+| `gh api user` fails with `HTTP 401` | Token expired or revoked → `gh auth login` |
+| `gh auth status` lacks `repo` in scopes | Reads work, pushes will be rejected → `gh auth refresh -s repo` |
+| Either command hangs, then times out | Network, proxy, or firewall — not credentials. Retry once before concluding; transient GitHub timeouts are common. |
+| `ls-remote` fails but `gh api user` succeeds | API reachable, git transport is not — usually a proxy that allows HTTPS to the API but blocks git, or a broken credential helper |
+
+**Never verify by pushing.** A health check must not write. Do not create a scratch repo, do not push the user's pending commits, do not commit anything to make something to push. Read the `repo` scope to determine whether a push is permitted; that answers the question without touching a remote.
 
 ## Claude Code CLI
 

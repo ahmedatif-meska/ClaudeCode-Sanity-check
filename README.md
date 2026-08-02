@@ -2,7 +2,9 @@
 
 A [Claude Code](https://claude.com/claude-code) skill that verifies a development environment is ready to work in, and walks you through installing whatever is missing.
 
-Checks **Homebrew** (macOS), **Node.js**, **GitHub CLI**, the **Claude Code CLI**, and the **Supabase MCP connector** on macOS and Windows.
+Checks **Python**, **pip**, **Homebrew** (macOS), **Node.js**, **GitHub CLI**, the **Claude Code CLI**, and the **Supabase MCP connector** on macOS and Windows.
+
+GitHub gets a live check on top of the presence check — `gh api user` and `git ls-remote` make real authenticated calls over the same auth and transport a push uses, so an expired token or blocked network shows up as a failure rather than a false pass. Both are read-only; the skill never pushes to verify.
 
 No dependencies on other skills or plugins — a `SKILL.md` and two probe scripts.
 
@@ -51,6 +53,7 @@ Or invoke it directly with `/sanity-check`.
 
 | Tool | macOS | Windows |
 |---|---|---|
+| Python + pip | `brew install python` | `winget install --id Python.Python.3.13 --source winget` |
 | Homebrew | official `install.sh` from Homebrew | n/a — `winget` ships with Windows |
 | Node.js | `brew install node` | `winget install --id OpenJS.NodeJS --source winget` |
 | GitHub CLI | `brew install gh` | `winget install --id GitHub.cli --source winget` |
@@ -64,13 +67,17 @@ The scripts are standalone and read-only. They print one `name|status|detail` li
 ```console
 $ bash sanity-check/scripts/check-macos.sh
 os|OK|macOS 14.5 (arm64)
-homebrew|OK|Homebrew 6.0.13
+python|OK|Python 3.13.12
+pip|OK|pip 25.3 from /Library/.../site-packages/pip (python 3.13)
+homebrew|OK|Homebrew 6.0.14
 node|OK|v24.18.0
 github-cli|MISSING|
 claude-code|OK|2.1.220 (Claude Code) (native)
 ```
 
 The Claude Code line reports the install method — `native` or `npm` — because the upgrade path differs between them.
+
+Python and pip are probed under both names (`python3`/`python`, `pip3`/`pip`), since macOS ships only the 3-suffixed ones and Windows ships the bare ones. Presence and version are separate facts: an interpreter that exists but whose `--version` fails reports `OK|…, version unavailable`, never `MISSING` — reinstalling wouldn't be the fix.
 
 `NOT_ON_PATH` is a distinct status from `MISSING`: it means Homebrew is installed but your shell can't see it — common on Apple Silicon, where reinstalling won't help and a shell-profile fix will.
 

@@ -16,6 +16,29 @@ probe() {
 
 printf 'os|OK|macOS %s (%s)\n' "$(sw_vers -productVersion)" "$(uname -m)"
 
+# Python and pip. macOS ships no bare `python`/`pip` — only the 3-suffixed names —
+# while Windows ships the reverse. Try both so one status line means the same
+# thing on either OS. Both write --version to stderr on some builds.
+for pair in "python:python3 python" "pip:pip3 pip"; do
+  label="${pair%%:*}"
+  found=""
+  for bin in ${pair#*:}; do
+    if command -v "$bin" >/dev/null 2>&1; then
+      found="$bin"
+      break
+    fi
+  done
+  if [ -n "$found" ]; then
+    # Presence and version are separate facts. An interpreter that exists but
+    # whose --version fails is installed, not missing — saying MISSING would
+    # send the user to reinstall something they already have.
+    version="$("$found" --version 2>&1 | head -1)"
+    printf '%s|OK|%s\n' "$label" "${version:-$found, version unavailable}"
+  else
+    printf '%s|MISSING|\n' "$label"
+  fi
+done
+
 # Homebrew may be installed but absent from a non-login shell's PATH — most often
 # on Apple Silicon, where it lives in /opt/homebrew rather than /usr/local.
 if command -v brew >/dev/null 2>&1; then
